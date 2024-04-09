@@ -2,7 +2,7 @@
 <html>
 
 <head>
-  <title>Chat App</title>
+  <title>EMEC Chatbot</title>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
@@ -12,15 +12,15 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
   <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style.css') }}">
   <script src="https://cdn.jsdelivr.net/npm/highlight.js@10.7.2/lib/languages/python.min.js"></script>
-
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/a11y-dark.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
 </head>
 
 <body>
   <div class="container mt-5">
     <h1 style="color:white">Chat Bot</h1>
     <div class="chat-box mt-3">
+      <!-- Chat messages will be added here dynamically -->
     </div>
     <div class="form-group mt-3">
       <textarea class="form-control" rows="3" placeholder="Type your message here" id="message-input"></textarea>
@@ -28,12 +28,13 @@
     <button type="button" class="btn btn-primary" id="send-btn">Send</button>
   </div>
   <script>
-setInterval(highlightAll,1000);
-function highlightAll() {
-  document.querySelectorAll("pre code").forEach(block => {
-    hljs.highlightBlock(block);
-  });
-}
+    setInterval(highlightAll, 1000);
+    // Function to highlight code using highlight.js library
+    function highlightAll() {
+      document.querySelectorAll("pre code").forEach(block => {
+        hljs.highlightBlock(block);
+      });
+    }
 
     const chatBox = document.querySelector(".chat-box");
     const messageInput = document.querySelector("#message-input");
@@ -44,22 +45,18 @@ function highlightAll() {
       messageDiv.classList.add("mt-3", "p-3", "rounded");
 
       if (isUserMessage) {
-        messageDiv.classList.add("user-message");
-
+        messageDiv.classList.add("bg-primary", "text-white", "user-message");
       } else {
-        messageDiv.classList.add("bot-message");
+        messageDiv.classList.add("bg-secondary", "text-white", "bot-message");
       }
 
-      messageDiv.innerHTML = `
-        <img src="{{ url_for('static', filename='images/user.png') }}" class="user-icon"><p>${message}</p>
-        `;
+      const messageContent = document.createElement("p");
+      messageContent.textContent = message;
 
+      messageDiv.appendChild(messageContent);
       chatBox.appendChild(messageDiv);
       chatBox.scrollTop = chatBox.scrollHeight;
     }
-
-
-
 
     function sendMessage() {
       const message = messageInput.value.trim();
@@ -74,35 +71,23 @@ function highlightAll() {
           },
           body: JSON.stringify({ message })
         })
-          .then(response => response.json())
-          .then(data => {
-                      messageInput.value = "";
-            const messageDiv = document.createElement("div");
-            messageDiv.classList.add("mt-3", "p-3", "rounded");
-            messageDiv.classList.add("bot-message");
-           
-            const content = data.content;
-            
-            const hasCodeBlock = content.includes("```");
-            if (hasCodeBlock) {
-              const codeContent = content.replace(/```([\s\S]+?)```/g, '</p><pre><code>$1</code></pre><p>');
-
-             
-              messageDiv.innerHTML = `<img src="{{ url_for('static', filename='images/gpt.jpg') }}" class="bot-icon"><p>${codeContent}</p>`
-             
-            }
-            else{
-              messageDiv.innerHTML = `<img src="{{ url_for('static', filename='images/gpt.jpg') }}" class="bot-icon"><p>${content}</p>`
-            }
-            chatBox.appendChild(messageDiv);
-            chatBox.scrollTop = chatBox.scrollHeight;
-
-          })
-          .catch(error => console.error(error));
+        .then(response => response.json())
+        .then(data => {
+          messageInput.value = "";
+          if(data.content) {
+            addMessage(data.content, false);
+          } else {
+            // Handle any response without 'content' as an error or unusual case
+            addMessage("Sorry, I didn't get that.", false);
+          }
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          addMessage("Sorry, there was an error processing your request.", false);
+        });
       }
     }
 
-    
     sendBtn.addEventListener("click", sendMessage);
     messageInput.addEventListener("keydown", event => {
       if (event.keyCode === 13 && !event.shiftKey) {
