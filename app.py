@@ -3,6 +3,7 @@ import openai
 
 app = Flask(__name__)
 
+# Set up OpenAI API credentials
 openai.api_key = 'YOUR_API_KEY_HERE'
 
 @app.route("/")
@@ -11,6 +12,7 @@ def index():
 
 @app.route("/api", methods=["POST"])
 def api():
+    # Get the message from the POST request
     data = request.get_json()
     message = data['message']
     
@@ -20,8 +22,10 @@ def api():
             model="gpt-3.5-turbo",
             messages=[{"role": "user", "content": message}]
         )
+        # Assuming the structure of the response object fits this; adjust as necessary.
         response_text = response['choices'][0]['message']['content'] if response['choices'] else 'Failed to generate response.'
         
+        # Return the response as JSON
         return jsonify({"content": response_text})
     except Exception as e:
         return jsonify({"error": str(e), "content": "An error occurred processing your request."})
